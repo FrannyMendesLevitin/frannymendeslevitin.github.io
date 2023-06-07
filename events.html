@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Airtable OAuth Example</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <h1>Airtable Records</h1>
+  <div id="records"></div>
+
+  <script>
+    // Airtable OAuth configuration
+    const airtableClientId = 'YOUR_CLIENT_ID';
+    const airtableRedirectUri = 'YOUR_REDIRECT_URI';
+    const airtableBaseId = 'YOUR_BASE_ID';
+    const airtableTableName = 'YOUR_TABLE_NAME';
+
+    // Function to handle the OAuth flow
+    function handleOAuth() {
+      const authUrl = `https://airtable.com/v0.1/oauth/authorize?client_id=${airtableClientId}&redirect_uri=${encodeURIComponent(airtableRedirectUri)}&state=random_state_string`;
+
+      // Redirect the user to the Airtable OAuth authorization page
+      window.location.href = authUrl;
+    }
+
+    // Function to fetch and display records from Airtable
+    async function fetchRecords() {
+      try {
+        // Get the access token from the URL hash after successful OAuth authentication
+        const accessToken = window.location.hash.substring(1);
+
+        // Fetch the records using the access token
+        const response = await axios.get(`https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        });
+
+        // Process the records
+        const records = response.data.records;
+        const recordsContainer = document.getElementById('records');
+
+        // Loop over each record and display the title and description fields
+        records.forEach(record => {
+          const title = record.fields['Title'];
+          const description = record.fields['Description'];
+
+          const titleElement = document.createElement('h3');
+          titleElement.textContent = title;
+
+          const descriptionElement = document.createElement('p');
+          descriptionElement.textContent = description;
+
+          recordsContainer.appendChild(titleElement);
+          recordsContainer.appendChild(descriptionElement);
+        });
+      } catch (error) {
+        console.error('Error fetching records:', error);
+      }
+    }
+
+    // Check if the access token is present in the URL hash
+    if (window.location.hash) {
+      // Access token is present, fetch and display the records
+      fetchRecords();
+    } else {
+      // Access token is not present, initiate the OAuth flow
+      handleOAuth();
+    }
+  </script>
+</body>
+</html>
